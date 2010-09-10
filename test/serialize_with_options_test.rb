@@ -232,6 +232,16 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
 
       should_serialize_with_options
     end
+    
+    context "being converted to JSON by ActiveSupport::JSON.encode" do
+      setup do
+        @user_hash = ActiveSupport::JSON.decode(ActiveSupport::JSON.encode(@user))['user']
+        @post_hash = ActiveSupport::JSON.decode(ActiveSupport::JSON.encode(@post))['post']
+        @blog_post_hash = ActiveSupport::JSON.decode(ActiveSupport::JSON.encode(@blog_post))['blog_post']
+      end
+      
+      should_serialize_with_options
+    end
 
     context "serializing associated models" do
       setup do

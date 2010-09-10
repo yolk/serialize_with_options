@@ -69,16 +69,20 @@ module SerializeWithOptions
     def to_json(opts_or_set = {}, additional_opts=nil)
       super(get_serialization_options(opts_or_set, additional_opts))
     end
+    
+    def as_json(opts_or_set = {}, additional_opts=nil)
+      super(get_serialization_options(opts_or_set, additional_opts))
+    end
 
     private
 
     def get_serialization_options(opts_or_set, additional_opts)
       if opts_or_set.is_a? Symbol
         set  = opts_or_set
-        opts = (additional_opts || {}).dup
+        opts = additional_opts || {}
       else
         set  = :default
-        opts = opts_or_set.dup
+        opts = opts_or_set || {}
       end
       
       compile_serialization_options(self.class.serialization_options(set)).tap do |compiled_options|
