@@ -7,7 +7,17 @@ $:.unshift(File.dirname(__FILE__) + '/../lib')
 require 'serialize_with_options'
 require File.dirname(__FILE__) + "/../init"
 
-ActiveRecord::Base.logger = Logger.new('/tmp/serialize_with_options.log')
+# Include logger
+require 'logger'
+ActiveRecord::Base.logger = Logger.new(STDOUT)
+ActiveRecord::Base.logger.level = Logger::INFO
+ActiveRecord::Migration.verbose = false
+
+# Set some Rails 3 defaults for json encoding
+ActiveRecord::Base.include_root_in_json = true
+ActiveSupport.use_standard_json_time_format = true
+ActiveSupport.escape_html_entities_in_json = false
+
 ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
 
 [:users, :posts, :comments, :check_ins, :reviews].each do |table|
