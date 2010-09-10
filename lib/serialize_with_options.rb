@@ -75,17 +75,20 @@ module SerializeWithOptions
     def get_serialization_options(opts_or_set, additional_opts)
       if opts_or_set.is_a? Symbol
         set  = opts_or_set
-        opts = additional_opts || {}
+        opts = (additional_opts || {}).dup
       else
         set  = :default
-        opts = opts_or_set
+        opts = opts_or_set.dup
       end
       
-      compile_serialization_options(self.class.serialization_options(set)).deep_merge(opts || {})
+      compile_serialization_options(self.class.serialization_options(set)).tap do |compiled_options|
+        compiled_options.deep_merge!(opts) if opts && opts.any?
+      end
     end
     
     def compile_serialization_options(opts)
-      optional_methods = opts[:optional_methods]
+      opts = opts.dup
+      optional_methods = opts.delete(:optional_methods)
       if optional_methods
         opts[:methods] ||= []
         optional_methods.each do |array|
