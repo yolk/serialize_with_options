@@ -188,6 +188,23 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
         post_hash = Hash.from_xml(@post.to_xml(:with_email))["post"]
         assert_equal @user.email, post_hash["user"]["email"]
       end
+    
+      context "combinded with additional options" do
+        setup do
+          @review = Review.create(:reviewable => @user, :content => "troll")
+        end
+        
+        should "use secondary configuration" do
+          user_hash = Hash.from_xml(@user.to_xml(:with_email, {:include => :reviews}))["user"]
+          assert_equal @user.email, user_hash["email"]
+        end
+        
+        should "use additional options and overwrite properties from set" do
+          user_hash = Hash.from_xml(@user.to_xml(:with_email, {:include => :reviews}))["user"]
+          assert_equal @review.content, user_hash["reviews"].first["content"]
+          assert_equal nil, user_hash["posts"]
+        end
+      end
     end
 
     context "with a polymorphic relationship" do

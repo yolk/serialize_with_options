@@ -62,22 +62,23 @@ module SerializeWithOptions
   end
 
   module InstanceMethods
-    def to_xml(opts = {})
-      super(get_serialization_options(opts))
+    def to_xml(opts_or_set = {}, additional_opts=nil)
+      super(get_serialization_options(opts_or_set, additional_opts))
     end
 
-    def to_json(opts = {})
-      super(get_serialization_options(opts))
+    def to_json(opts_or_set = {}, additional_opts=nil)
+      super(get_serialization_options(opts_or_set, additional_opts))
     end
 
     private
 
-    def get_serialization_options(opts)
-      if opts.is_a? Symbol
-        set  = opts
-        opts = {}
+    def get_serialization_options(opts_or_set, additional_opts)
+      if opts_or_set.is_a? Symbol
+        set  = opts_or_set
+        opts = additional_opts || {}
       else
         set  = :default
+        opts = opts_or_set
       end
       
       compile_serialization_options(self.class.serialization_options(set)).deep_merge(opts || {})
