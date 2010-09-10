@@ -30,9 +30,30 @@ class User < ActiveRecord::Base
   serialize_with_options(:with_reviews) do
     includes :reviews
   end
+  
+  serialize_with_options(:with_optional_methods) do
+    optional_methods [:post_count, :add_post_count?]
+  end
+  
+  serialize_with_options(:with_optional_and_normal_methods) do
+    methods :other_method
+    optional_methods [:post_count, :add_post_count?]
+  end
 
   def post_count
     self.posts.count
+  end
+  
+  def other_method
+    "foo value"
+  end
+  
+  def add_post_count?
+    @add_post_count
+  end
+  
+  def add_post_count=(add_post_count)
+    @add_post_count = add_post_count
   end
 end
 
@@ -209,6 +230,66 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
       should "respect xml formatting options" do
         assert !@user.to_xml(:with_check_ins).include?('check-ins')
         assert !@user.to_xml(:with_check_ins).include?('type=')
+      end
+    end
+  
+    context "with optional_methods" do
+      setup do
+        @user = User.create(:name => "John User", :email => "john@example.com")
+      end
+      
+      context "if add_post_count? returns true" do
+        setup do
+          @user.add_post_count = true
+        end
+        
+        should "add post_count" do
+          user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_methods))['user']
+          assert user_hash.keys.include?("post_count")
+          assert_equal 0, user_hash['post_count']
+        end
+        
+        should "add normal methods" do
+          user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_and_normal_methods))['user']
+          assert_equal 'foo value', user_hash['other_method']
+          assert_equal 0, user_hash['post_count']
+        end
+      end
+      
+      context "if add_post_count? returns false" do
+        setup do
+          @user.add_post_count = false
+        end
+        
+        should "add post_count" do
+          user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_methods))['user']
+          assert !user_hash.keys.include?("post_count")
+          assert_equal nil, user_hash['post_count']
+        end
+        
+        should "add normal methods" do
+          user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_and_normal_methods))['user']
+          assert_equal 'foo value', user_hash['other_method']
+          assert_equal nil, user_hash['post_count']
+        end
+      end
+      
+      context "if add_post_count? returns nil" do
+        setup do
+          @user.add_post_count = nil
+        end
+        
+        should "add post_count" do
+          user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_methods))['user']
+          assert !user_hash.keys.include?("post_count")
+          assert_equal nil, user_hash['post_count']
+        end
+        
+        should "add normal methods" do
+          user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_and_normal_methods))['user']
+          assert_equal 'foo value', user_hash['other_method']
+          assert_equal nil, user_hash['post_count']
+        end
       end
     end
   end

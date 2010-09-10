@@ -80,7 +80,18 @@ module SerializeWithOptions
         set  = :default
       end
       
-      self.class.serialization_options(set).deep_merge(opts || {})
+      compile_serialization_options(self.class.serialization_options(set)).deep_merge(opts || {})
+    end
+    
+    def compile_serialization_options(opts)
+      optional_methods = opts[:optional_methods]
+      if optional_methods
+        opts[:methods] ||= []
+        optional_methods.each do |array|
+          opts[:methods] << array[0] if self.send(array[1])
+        end
+      end
+      opts
     end
   end
 end
