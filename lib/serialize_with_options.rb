@@ -22,6 +22,7 @@ module SerializeWithOptions
   end
 
   def serialization_options(set)
+    return {} if set == :all
     options = read_inheritable_attribute(:options)
     options[set] ||= serialization_configuration(set).tap do |opts|
       includes = opts.delete(:includes)
@@ -67,10 +68,14 @@ module SerializeWithOptions
     end
 
     def to_json(opts_or_set = {}, additional_opts=nil)
-      super(get_serialization_options(opts_or_set, additional_opts))
+      super([opts_or_set, additional_opts])
     end
     
     def as_json(opts_or_set = {}, additional_opts=nil)
+      if additional_opts.nil? && opts_or_set.is_a?(Array) && opts_or_set.size == 2
+        opts_or_set, additional_opts = *opts_or_set
+      end
+      
       super(get_serialization_options(opts_or_set, additional_opts))
     end
 

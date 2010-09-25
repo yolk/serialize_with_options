@@ -241,6 +241,11 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
       end
       
       should_serialize_with_options
+      
+      should "produce same result as to_json" do
+        assert_equal @user.to_json, ActiveSupport::JSON.encode(@user)
+        assert_equal @user.to_json(:all), ActiveSupport::JSON.encode(@user, :all)
+      end
     end
 
     context "serializing associated models" do
@@ -317,6 +322,22 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
           assert_equal 'foo value', user_hash['other_method']
           assert_equal nil, user_hash['post_count']
         end
+      end
+    end
+  
+    context "default all options" do
+      setup do
+        @user = User.create(:name => "John User", :email => "john@example.com")
+      end
+      
+      should "include all db columns when serialized to xml" do
+        user_keys = Hash.from_xml(@user.to_xml(:all))["user"].keys.sort
+        assert_equal @user.class.column_names.sort, user_keys
+      end
+      
+      should "include all db columns when serialized to json" do
+        user_keys = ActiveSupport::JSON.decode(@user.to_json(:all))["user"].keys.sort
+        assert_equal @user.class.column_names.sort, user_keys
       end
     end
   end
