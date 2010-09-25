@@ -86,8 +86,8 @@ module SerializeWithOptions
         set  = opts_or_set
         opts = additional_opts || {}
       else
-        set  = :default
         opts = opts_or_set || {}
+        set  = opts[:configuration] || :default
       end
       
       compile_serialization_options(self.class.serialization_options(set)).tap do |compiled_options|
