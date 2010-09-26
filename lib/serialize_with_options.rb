@@ -87,11 +87,12 @@ module SerializeWithOptions
         opts = additional_opts || {}
       else
         opts = opts_or_set || {}
-        set  = opts[:configuration] || :default
+        set  = opts[:set] || :default
       end
       
       compile_serialization_options(self.class.serialization_options(set)).tap do |compiled_options|
         compiled_options.deep_merge!(opts) if opts && opts.any?
+        compiled_options.delete(:set)
       end
     end
     

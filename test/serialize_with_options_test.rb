@@ -341,17 +341,17 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
       end
     end
     
-    context "specifing the configuration set alternativly in the options hash as :configuration" do
+    context "specifing the configuration set alternativly in the options hash as :set" do
       setup do
         @user = User.create(:name => "John User", :email => "john@example.com")
       end
       
       should "format to_xml correctly" do
-        assert_equal @user.to_xml(:all), @user.to_xml(:configuration => :all)
+        assert_equal @user.to_xml(:all), @user.to_xml(:set => :all)
       end
       
       should "format to_json correctly" do
-        assert_equal @user.to_json(:all), @user.to_json(:configuration => :all)
+        assert_equal @user.to_json(:all), @user.to_json(:set => :all)
       end
     end
     
@@ -361,11 +361,11 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
       end
       
       should "work with to_xml" do
-        assert_equal Hash.from_xml(@users.first.to_xml(:all))["user"], Hash.from_xml(@users.to_xml(:configuration => :all))["users"].first
+        assert_equal Hash.from_xml(@users.first.to_xml(:all))["user"], Hash.from_xml(@users.to_xml(:set => :all))["users"].first
       end
       
       should "work with to_json" do
-        assert_equal ActiveSupport::JSON.decode(@users.first.to_json(:all)), ActiveSupport::JSON.decode(@users.to_json(:configuration => :all)).first
+        assert_equal ActiveSupport::JSON.decode(@users.first.to_json(:all)), ActiveSupport::JSON.decode(@users.to_json(:set => :all)).first
       end
       
     end
