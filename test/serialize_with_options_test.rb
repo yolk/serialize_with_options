@@ -293,7 +293,7 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
           @user.add_post_count = false
         end
         
-        should "add post_count" do
+        should "not add post_count" do
           user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_methods))['user']
           assert !user_hash.keys.include?("post_count")
           assert_equal nil, user_hash['post_count']
@@ -311,7 +311,7 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
           @user.add_post_count = nil
         end
         
-        should "add post_count" do
+        should "not add post_count" do
           user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_methods))['user']
           assert !user_hash.keys.include?("post_count")
           assert_equal nil, user_hash['post_count']
@@ -321,6 +321,21 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
           user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_and_normal_methods))['user']
           assert_equal 'foo value', user_hash['other_method']
           assert_equal nil, user_hash['post_count']
+        end
+      end
+    
+      context "if add_post_count changes" do
+        setup do
+          @user.add_post_count = true
+        end
+        
+        should "add post_count first and remove it when add_post_count changes" do
+          user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_optional_and_normal_methods))['user']
+          assert user_hash.keys.include?("post_count")
+          assert_equal 0, user_hash['post_count']
+          @user.add_post_count = false
+          user_hash2 = ActiveSupport::JSON.decode(@user.to_json(:with_optional_and_normal_methods))['user']
+          assert !user_hash2.keys.include?("post_count")
         end
       end
     end
@@ -369,5 +384,6 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
       end
       
     end
+    
   end
 end

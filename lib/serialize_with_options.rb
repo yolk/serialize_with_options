@@ -100,7 +100,7 @@ module SerializeWithOptions
       opts = opts.dup
       optional_methods = opts.delete(:optional_methods)
       if optional_methods
-        opts[:methods] ||= []
+        opts[:methods] = opts[:methods] ? opts[:methods].dup : []
         optional_methods.each do |array|
           opts[:methods] << array[0] if self.send(array[1])
         end
