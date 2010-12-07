@@ -2,7 +2,7 @@ $LOAD_PATH.unshift 'lib'
 
 Gem::Specification.new do |s|
   s.name = "serialize_with_options"
-  s.version = '0.0.5.yolk'
+  s.version = '0.0.6.yolk'
   s.date = Time.now.strftime('%Y-%m-%d')
   s.summary = "Enhanced serialize options for rails, forked from serialize_with_options"
   s.homepage = "http://github.com/yolk/serialize_with_options"
