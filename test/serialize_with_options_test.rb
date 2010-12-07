@@ -47,7 +47,11 @@ class User < ActiveRecord::Base
   serialize_with_options(:inherited => :with_email) do
     methods   :other_method
   end
-
+  
+  serialize_with_options(:return_nil_on) do
+    return_nil_on :email
+  end
+  
   def post_count
     self.posts.count
   end
@@ -434,6 +438,31 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
         assert !user_hash.keys.include?("post_count")
         user_hash = Hash.from_xml(@user.to_xml(:inherited))['user']
         assert !user_hash.keys.include?("post_count")
+      end
+    end
+    
+    context "return_nil_on" do
+      setup do
+        @user = User.create(:name => "John User", :email => "john@example.com")
+      end
+      
+      should "overwrite value of given attributes with nil but include them" do
+        user_hash = ActiveSupport::JSON.decode(@user.to_json(:return_nil_on))['user']
+        user_hash.keys.include?("email")
+        assert_equal nil, user_hash['email']
+        user_hash = Hash.from_xml(@user.to_xml(:return_nil_on))['user']
+        user_hash.keys.include?("email")
+        assert_equal nil, user_hash['email']
+      end
+      
+      should "not change attributes and preserve changes of instance" do
+        @user.email = "me@theweb.com"
+        @user.to_json(:return_nil_on)
+        assert_equal({"email" => ["john@example.com", "me@theweb.com"]}, @user.changes)
+        [@user].to_json(:set => :return_nil_on)
+        assert_equal({"email" => ["john@example.com", "me@theweb.com"]}, @user.changes)
+        @user.to_xml(:return_nil_on)
+        assert_equal({"email" => ["john@example.com", "me@theweb.com"]}, @user.changes)
       end
     end
     

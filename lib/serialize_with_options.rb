@@ -72,7 +72,7 @@ module SerializeWithOptions
 
   module InstanceMethods
     def to_xml(opts_or_set = {}, additional_opts=nil)
-      super(get_serialization_options(opts_or_set, additional_opts))
+      serialization_options_after_wrapper super(get_serialization_options(opts_or_set, additional_opts))
     end
 
     def to_json(opts_or_set = {}, additional_opts=nil)
@@ -84,7 +84,7 @@ module SerializeWithOptions
         opts_or_set, additional_opts = *opts_or_set
       end
       
-      super(get_serialization_options(opts_or_set, additional_opts))
+      serialization_options_after_wrapper super(get_serialization_options(opts_or_set, additional_opts))
     end
 
     private
@@ -107,13 +107,29 @@ module SerializeWithOptions
     def compile_serialization_options(opts)
       opts = opts.dup
       optional_methods = opts.delete(:optional_methods)
+      return_nil_on = opts.delete(:return_nil_on)
       if optional_methods
         opts[:methods] = opts[:methods] ? opts[:methods].dup : []
         optional_methods.each do |array|
           opts[:methods] << array[0] if self.send(array[1])
         end
       end
+      if return_nil_on
+        @serialization_options_return_nil_on_cache = {}
+        return_nil_on.each do |attr|
+          @serialization_options_return_nil_on_cache[attr] = read_attribute(attr)
+          write_attribute attr, nil
+        end
+      end
       opts
+    end
+    
+    def serialization_options_after_wrapper(data)
+      @serialization_options_return_nil_on_cache.each do |attr, value|
+        write_attribute(attr, value)
+      end if @serialization_options_return_nil_on_cache
+      @serialization_options_return_nil_on_cache = nil
+      data
     end
   end
 end
