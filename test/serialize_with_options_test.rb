@@ -39,7 +39,11 @@ class User < ActiveRecord::Base
     methods :other_method
     optional_methods [:post_count, :add_post_count?]
   end
-
+  
+  serialize_with_options(:only_email) do
+    only :email
+  end
+  
   def post_count
     self.posts.count
   end
@@ -383,6 +387,20 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
         assert_equal ActiveSupport::JSON.decode(@users.first.to_json(:all)), ActiveSupport::JSON.decode(@users.to_json(:set => :all)).first
       end
       
+    end
+    
+    context "only" do
+      setup do
+        @user = User.create(:name => "John User", :email => "john@example.com")
+      end
+      
+      should "adds only attributes specified with only" do
+        user_hash = ActiveSupport::JSON.decode(@user.to_json(:only_email))['user']
+        assert_equal ["email"], user_hash.keys
+        assert_equal "john@example.com", user_hash['email']
+        user_hash = Hash.from_xml(@user.to_xml(:only_email))['user']
+        assert_equal ["email"], user_hash.keys
+      end
     end
     
   end
