@@ -44,6 +44,10 @@ class User < ActiveRecord::Base
     only :email
   end
   
+  serialize_with_options(:inherited => :with_email) do
+    methods   :other_method
+  end
+
   def post_count
     self.posts.count
   end
@@ -400,6 +404,36 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
         assert_equal "john@example.com", user_hash['email']
         user_hash = Hash.from_xml(@user.to_xml(:only_email))['user']
         assert_equal ["email"], user_hash.keys
+        assert_equal "john@example.com", user_hash['email']
+      end
+    end
+    
+    context "inherit options" do
+      setup do
+        @user = User.create(:name => "John User", :email => "john@example.com")
+      end
+      
+      should "adds options given in own block" do
+        user_hash = ActiveSupport::JSON.decode(@user.to_json(:inherited))['user']
+        assert user_hash.keys.include?("other_method")
+        user_hash = Hash.from_xml(@user.to_xml(:inherited))['user']
+        assert user_hash.keys.include?("other_method")
+      end
+      
+      should "inherit from given parent" do
+        user_hash = ActiveSupport::JSON.decode(@user.to_json(:inherited))['user']
+        assert user_hash.keys.include?("email")
+        assert user_hash.keys.include?("posts")
+        user_hash = Hash.from_xml(@user.to_xml(:inherited))['user']
+        assert user_hash.keys.include?("email")
+        assert user_hash.keys.include?("posts")
+      end
+      
+      should "overwrite options" do
+        user_hash = ActiveSupport::JSON.decode(@user.to_json(:inherited))['user']
+        assert !user_hash.keys.include?("post_count")
+        user_hash = Hash.from_xml(@user.to_xml(:inherited))['user']
+        assert !user_hash.keys.include?("post_count")
       end
     end
     

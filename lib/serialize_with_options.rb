@@ -3,8 +3,16 @@ module SerializeWithOptions
   def serialize_with_options(set = :default, &block)
     configuration = read_inheritable_attribute(:configuration) || {}
     options       = read_inheritable_attribute(:options) || {}
-
-    configuration[set] = Config.new.instance_eval(&block)
+    
+    conf = Config.new.instance_eval(&block)
+    
+    if Hash === set
+      set, inherit_from = set.keys.first.to_sym, set.values.first.to_sym
+      raise "Please define set #{inherit_from} before #{set}." unless configuration[inherit_from]
+      configuration[set] = serialization_configuration(inherit_from).merge(conf)
+    else
+      configuration[set] = conf
+    end
 
     write_inheritable_attribute :configuration, configuration
     write_inheritable_attribute :options, options
