@@ -9,7 +9,7 @@ module SerializeWithOptions
     if Hash === set
       set, inherit_from = set.keys.first.to_sym, set.values.first.to_sym
       raise "Please define set #{inherit_from} before #{set}." unless configuration[inherit_from]
-      configuration[set] = serialization_configuration(inherit_from).merge(conf)
+      configuration[set] = serialization_configuration(inherit_from).merge(conf.delete_if{|k, v| v.nil? })
     else
       configuration[set] = conf
     end

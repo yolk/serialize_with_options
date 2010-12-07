@@ -44,7 +44,12 @@ class User < ActiveRecord::Base
     only :email
   end
   
-  serialize_with_options(:inherited => :with_email) do
+  serialize_with_options(:inherit_from) do
+    only    :email
+    methods :post_count
+  end
+  
+  serialize_with_options(:inherited => :inherit_from) do
     methods   :other_method
   end
   
@@ -427,10 +432,10 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
       should "inherit from given parent" do
         user_hash = ActiveSupport::JSON.decode(@user.to_json(:inherited))['user']
         assert user_hash.keys.include?("email")
-        assert user_hash.keys.include?("posts")
+        assert !user_hash.keys.include?("name")
         user_hash = Hash.from_xml(@user.to_xml(:inherited))['user']
         assert user_hash.keys.include?("email")
-        assert user_hash.keys.include?("posts")
+        assert !user_hash.keys.include?("name")
       end
       
       should "overwrite options" do
