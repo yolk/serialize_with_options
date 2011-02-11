@@ -354,5 +354,34 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
         assert_equal({"email" => ["john@example.com", "me@theweb.com"]}, @user.changes)
       end
     end
+    
+    context "with select option" do
+      def self.should_select_keys(select, expected=nil, set=nil)
+        should "return #{expected.inspect} keys on #{select.inspect} in xml" do
+          assert_equal Array(expected || select), Hash.from_xml(@user.to_xml(:select => select, :set => set))["user"].keys
+        end
+        
+        should "return #{expected.inspect} keys on #{select.inspect} in json" do
+          assert_equal Array(expected || select), ActiveSupport::JSON.decode(@user.to_json(:select => select, :set => set))["user"].keys
+        end
+        
+        should "return #{expected.inspect} keys on #{select.inspect} in xml array" do
+          assert_equal Array(expected || select), Hash.from_xml([@user].to_xml(:select => select, :set => set))["users"][0].keys
+        end
+        
+        should "return #{expected.inspect} keys on #{select.inspect} in json array" do
+          assert_equal Array(expected || select), ActiveSupport::JSON.decode([@user].to_json(:select => select, :set => set))[0]["user"].keys
+        end
+      end
+      
+      should_select_keys("id")
+      should_select_keys("post_count")
+      should_select_keys(["name", "post_count"])
+      should_select_keys(["id", "name", "post_count"])
+      should_select_keys(["email", "name", "post_count", "other_method"], ["name", "post_count"])
+      
+      
+      should_select_keys(["email", "name", "post_count"], ["email"], :only_email)
+    end
   end
 end
