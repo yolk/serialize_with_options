@@ -3,32 +3,15 @@ require 'test_helper'
 class User < ActiveRecord::Base
   has_many :posts
   has_many :blog_posts
-  has_many :check_ins
   has_many :reviews, :as => :reviewable
 
   serialize_with_options do
     methods   :post_count
-    includes  :posts
     except    :email
   end
 
-  serialize_with_options(:with_email) do
-    methods   :post_count
-    includes  :posts
-  end
-
-  serialize_with_options(:with_comments) do
-    includes  :posts => { :include => :comments }
-  end
-
-  serialize_with_options(:with_check_ins) do
-    includes :check_ins
-    dasherize false
-    skip_types true
-  end
-
-  serialize_with_options(:with_reviews) do
-    includes :reviews
+  serialize_with_options(:with_other_method) do
+    methods   :other_method
   end
   
   serialize_with_options(:with_optional_methods) do
@@ -76,43 +59,16 @@ end
 
 class Post < ActiveRecord::Base
   belongs_to :user
-  has_many :comments
   has_many :reviews, :as => :reviewable
 
   serialize_with_options do
     only :title
-    includes :user, :comments
-  end
-
-  serialize_with_options(:with_email) do
-    includes :user, :comments
   end
 end
 
 class BlogPost < Post
-  serialize_with_options(:with_email) do
-    includes :user
-  end
-end
-
-class Comment < ActiveRecord::Base
-  belongs_to :post
-end
-
-class CheckIn < ActiveRecord::Base
-  belongs_to :user
-
   serialize_with_options do
-    only :code_name
-    includes :user
-  end
-end
-
-class Review < ActiveRecord::Base
-  belongs_to :reviewable, :polymorphic => true
-
-  serialize_with_options do
-    includes :reviewable
+    only :title, :content
   end
 end
 
@@ -133,33 +89,14 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
     should "exclude attributes not in :only list" do
       assert_equal nil, @post_hash["content"]
     end
-
-    should "include specified associations" do
-      assert_equal @post.title, @user_hash["posts"].first["title"]
-    end
-
+    
     should "be identical in inherited model" do
       assert_equal @post_hash["title"], @blog_post_hash["title"]
     end
 
-    should "include specified methods on associations" do
-      assert_equal @user.post_count, @post_hash["user"]["post_count"]
-    end
-
-    should "exclude specified methods on associations" do
-      assert_equal nil,  @post_hash["user"]["email"]
-    end
-
-    should "not include associations of associations" do
-      assert_equal nil, @user_hash["posts"].first["comments"]
-    end
-
-    should "include association without serialization options properly" do
-      assert_equal @comment.content, @post_hash["comments"].first["content"]
-    end
-
     should "override sets on inherited models" do
-      assert_equal nil, @blog_post_hash["comments"].first
+      assert_equal nil,           @post_hash["content"]
+      assert_equal "Welcome to my blog.", @blog_post_hash["content"]
     end
   end
 
@@ -168,7 +105,6 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
       @user = User.create(:name => "John User", :email => "john@example.com")
       @post = @user.posts.create(:title => "Hello World!", :content => "Welcome to my blog.")
       @blog_post = @user.blog_posts.create(:title => "Hello World!", :content => "Welcome to my blog.")
-      @comment = @post.comments.create(:content => "Great blog!")
     end
 
     context "being converted to XML" do
@@ -182,61 +118,26 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
     end
 
 
-    should "accept additional properties w/o overwriting defaults" do
-      xml = @post.to_xml(:include => { :user => { :except => nil } })
-      post_hash = Hash.from_xml(xml)["post"]
-
-      assert_equal @user.email,       post_hash["user"]["email"]
-      assert_equal @user.post_count,  post_hash["user"]["post_count"]
-    end
-
-    should "accept a hash for includes directive" do
-      user_hash = Hash.from_xml(@user.to_xml(:with_comments))["user"]
-      assert_equal @comment.content, user_hash["posts"].first["comments"].first["content"]
-    end
+    # should "accept additional properties w/o overwriting defaults" do
+    #   xml = @user.to_xml(:methods => [:other_method])
+    #   user_hash = Hash.from_xml(xml)["user"]
+    # 
+    #   assert_equal @user.email,         user_hash["email"]
+    #   assert_equal nil,                 user_hash["post_count"]
+    #   assert_equal @user.other_method,  user_hash["other_method"]
+    # end
 
     context "with a secondary configuration" do
-      should "use it" do
-        user_hash = Hash.from_xml(@user.to_xml(:with_email))["user"]
-        assert_equal @user.email, user_hash["email"]
-      end
-
-      should "pass it through to included models" do
-        post_hash = Hash.from_xml(@post.to_xml(:with_email))["post"]
-        assert_equal @user.email, post_hash["user"]["email"]
-      end
-    
-      context "combinded with additional options" do
-        setup do
-          @review = Review.create(:reviewable => @user, :content => "troll")
-        end
-        
-        should "use secondary configuration" do
-          user_hash = Hash.from_xml(@user.to_xml(:with_email, {:include => :reviews}))["user"]
-          assert_equal @user.email, user_hash["email"]
-        end
-        
-        should "use additional options and overwrite properties from set" do
-          user_hash = Hash.from_xml(@user.to_xml(:with_email, {:include => :reviews}))["user"]
-          assert_equal @review.content, user_hash["reviews"].first["content"]
-          assert_equal nil, user_hash["posts"]
-        end
-      end
-    end
-
-    context "with a polymorphic relationship" do
       setup do
-        @review = Review.create(:reviewable => @user, :content => "troll")
+        @user_hash = Hash.from_xml(@user.to_xml(:with_other_method))["user"]
       end
-
-      should "include the associated object" do
-        user_hash = Hash.from_xml(@user.to_xml(:with_reviews))
-        assert_equal @review.content, user_hash["user"]["reviews"].first["content"]
+      
+      should "not be based on other configurations" do
+        assert_equal @user.email, @user_hash["email"]
       end
-
-      should "serialize the associated object properly" do
-        review_hash = Hash.from_xml(@review.to_xml)
-        assert_equal @user.email, review_hash["review"]["reviewable"]["email"]
+      
+      should "use it" do
+        assert_equal @user.other_method, @user_hash["other_method"]
       end
     end
 
@@ -262,23 +163,6 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
       should "produce same result as to_json" do
         assert_equal @user.to_json, ActiveSupport::JSON.encode(@user)
         assert_equal @user.to_json(:all), ActiveSupport::JSON.encode(@user, :all)
-      end
-    end
-
-    context "serializing associated models" do
-      setup do
-        @user = User.create(:name => "John User", :email => "john@example.com")
-        @check_in = @user.check_ins.create(:code_name => "Hello World")
-      end
-
-      should "find associations with multi-word names" do
-        user_hash = ActiveSupport::JSON.decode(@user.to_json(:with_check_ins))['user']
-        assert_equal @check_in.code_name, user_hash['check_ins'].first['code_name']
-      end
-
-      should "respect xml formatting options" do
-        assert !@user.to_xml(:with_check_ins).include?('check-ins')
-        assert !@user.to_xml(:with_check_ins).include?('type=')
       end
     end
   
@@ -470,6 +354,5 @@ class SerializeWithOptionsTest < Test::Unit::TestCase
         assert_equal({"email" => ["john@example.com", "me@theweb.com"]}, @user.changes)
       end
     end
-    
   end
 end

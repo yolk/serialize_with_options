@@ -20,7 +20,7 @@ ActiveSupport.escape_html_entities_in_json = false
 
 ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
 
-[:users, :posts, :comments, :check_ins, :reviews, :performances].each do |table|
+[:users, :posts, :performances].each do |table|
   ActiveRecord::Base.connection.drop_table table rescue nil
 end
 
@@ -34,22 +34,6 @@ ActiveRecord::Base.connection.create_table :posts do |t|
   t.text :content
   t.integer :user_id
   t.string :type
-end
-
-ActiveRecord::Base.connection.create_table :comments do |t|
-  t.text :content
-  t.integer :post_id
-end
-
-ActiveRecord::Base.connection.create_table :check_ins do |t|
-  t.integer :user_id
-  t.string :code_name
-end
-
-ActiveRecord::Base.connection.create_table :reviews do |t|
-  t.string :content
-  t.integer :reviewable_id
-  t.string :reviewable_type
 end
 
 ActiveRecord::Base.connection.create_table :performances do |t|

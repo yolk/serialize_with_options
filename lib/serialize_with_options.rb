@@ -21,37 +21,15 @@ module SerializeWithOptions
   end
 
   def serialization_configuration(set)
-    configuration = read_inheritable_attribute(:configuration)
-    conf = if configuration
-      configuration[set] || configuration[:default]
-    end
+    conf = read_inheritable_attribute(:configuration)
 
-    conf.try(:dup) || { :methods => nil, :only => nil, :except => nil }
+    (conf && (conf[set] || conf[:default])).try(:dup) || { :methods => nil, :only => nil, :except => nil }
   end
 
   def serialization_options(set)
     return {} if set == :all
     options = read_inheritable_attribute(:options)
-    options[set] ||= serialization_configuration(set).tap do |opts|
-      includes = opts.delete(:includes)
-
-      if includes
-        opts[:include] = includes.inject({}) do |hash, class_name|
-          if class_name.is_a? Hash
-            hash.merge(class_name)
-          else
-            begin
-              klass = class_name.to_s.classify.constantize
-              hash[class_name] = klass.serialization_configuration(set)
-              hash[class_name][:include] = nil if hash[class_name].delete(:includes)
-              hash
-            rescue NameError
-              hash.merge(class_name => { :include => nil })
-            end
-          end
-        end
-      end
-    end
+    options[set] ||= serialization_configuration(set)
     write_inheritable_attribute :options, options
     options[set]
   end
@@ -99,15 +77,14 @@ module SerializeWithOptions
       end
       
       compile_serialization_options(self.class.serialization_options(set)).tap do |compiled_options|
-        compiled_options.deep_merge!(opts) if opts && opts.any?
+        compiled_options.deep_merge!(opts) if opts.any?
         compiled_options.delete(:set)
       end
     end
     
     def compile_serialization_options(opts)
       opts = opts.dup
-      optional_methods = opts.delete(:optional_methods)
-      return_nil_on = opts.delete(:return_nil_on)
+      optional_methods, return_nil_on = opts.delete(:optional_methods), opts.delete(:return_nil_on)
       if optional_methods
         opts[:methods] = opts[:methods] ? opts[:methods].dup : []
         optional_methods.each do |array|
