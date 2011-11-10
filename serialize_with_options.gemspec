@@ -15,4 +15,8 @@ Gem::Specification.new do |s|
   s.files += Dir.glob("rails/**/*.rb")
 
   s.description = "A fork of serializer_with_options enabling optional methods and other features"
+  
+  s.add_dependency 'activerecord',            '~> 3.0'
+  s.add_development_dependency 'shoulda'
+  s.add_development_dependency 'sqlite3'
 end

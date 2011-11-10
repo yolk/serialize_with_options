@@ -1,3 +1,5 @@
+require 'active_support/core_ext/class/inheritable_attributes'
+
 module SerializeWithOptions
 
   def serialize_with_options(set = :default, &block)
