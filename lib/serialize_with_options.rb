@@ -1,10 +1,15 @@
-require 'active_support/core_ext/class/inheritable_attributes'
+require 'active_support/core_ext/class/attribute'
 
 module SerializeWithOptions
+  
+  def self.extended(base)
+    base.class_attribute :serialization_conf, :instance_reader => false, :instance_writer => false
+    base.class_attribute :serialization_opts, :instance_reader => false, :instance_writer => false
+  end
 
   def serialize_with_options(set = :default, &block)
-    configuration = read_inheritable_attribute(:configuration) || {}
-    options       = read_inheritable_attribute(:options) || {}
+    configuration = self.serialization_conf || {}
+    options       = self.serialization_opts || {}
     
     conf = Config.new.instance_eval(&block)
     
@@ -16,16 +21,15 @@ module SerializeWithOptions
       configuration[set] = conf
     end
 
-    write_inheritable_attribute :configuration, configuration
-    write_inheritable_attribute :options, options
+    self.serialization_conf = configuration
+    self.serialization_opts = options
 
     include InstanceMethods
   end
 
   def serialization_configuration(set)
-    configuration = read_inheritable_attribute(:configuration)
-    conf = if configuration
-      configuration[set] || configuration[:default]
+    conf = if self.serialization_conf
+      self.serialization_conf[set] || self.serialization_conf[:default]
     end
 
     conf.try(:dup) || { :methods => nil, :only => nil, :except => nil }
@@ -33,7 +37,7 @@ module SerializeWithOptions
 
   def serialization_options(set)
     return {} if set == :all
-    options = read_inheritable_attribute(:options)
+    options = self.serialization_opts
     options[set] ||= serialization_configuration(set).tap do |opts|
       includes = opts.delete(:includes)
 
@@ -54,7 +58,7 @@ module SerializeWithOptions
         end
       end
     end
-    write_inheritable_attribute :options, options
+    self.serialization_opts = options
     options[set]
   end
 
